@@ -7,6 +7,7 @@ struct Game {
     grabs: Vec<Grab>,
 }
 
+#[derive(Copy, Clone)]
 struct Grab {
     red: u32,
     green: u32,
@@ -27,6 +28,14 @@ impl Grab {
             "green" => self.green += num,
             "blue" => self.blue += num,
             _ => panic!(),
+        }
+    }
+
+    fn apply(a: &Self, b: &Self, f: fn(u32, u32) -> u32) -> Self {
+        Self {
+            red: f(a.red, b.red),
+            green: f(a.green, b.green),
+            blue: f(a.blue, b.blue),
         }
     }
 }
@@ -52,14 +61,28 @@ fn valid_game(game: &Game) -> bool {
         .iter()
         .all(|g| g.red <= 12 && g.green <= 13 && g.blue <= 14)
 }
-fn solve(games: &[Game]) -> u32 {
+fn solve1(games: &[Game]) -> u32 {
     games.iter().filter(|g| valid_game(g)).map(|g| g.id).sum()
 }
+
+fn solve2_by_line(game: &Game) -> u64 {
+    let minimal_grab = game
+        .grabs
+        .iter()
+        .fold(Grab::empty(), |a, b| Grab::apply(&a, b, u32::max));
+    (minimal_grab.red * minimal_grab.green * minimal_grab.blue) as u64
+}
+
+fn solve2(games: &[Game]) -> u64 {
+    games.iter().map(solve2_by_line).sum()
+}
+
 fn main() -> Result<(), Error> {
     let input: Vec<_> = read_to_string(Path::new("data/input02.txt"))?
         .lines()
         .map(parse_game)
         .collect();
-    println!("{}", solve(&input));
+    println!("{}", solve1(&input));
+    println!("{}", solve2(&input));
     Ok(())
 }
