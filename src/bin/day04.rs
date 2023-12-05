@@ -46,11 +46,24 @@ impl Card {
 fn solve(cards: &[Card]) -> i64 {
     cards.iter().map(|c| c.get_points()).sum()
 }
+
+fn solve2(cards: &[Card]) -> usize {
+    let mut num_cards = vec![1_usize; cards.len()];
+
+    for (card_index, card) in cards.iter().enumerate().rev().skip(1) {
+        let num_matches = card.get_num_matches() as usize;
+        num_cards[card_index] += num_cards[card_index+1..card_index+1+num_matches].iter().sum::<usize>();
+    }
+
+    num_cards.iter().sum()
+}
+
 fn main() -> Result<(), Error> {
     let cards = fs::read_to_string(Path::new("data/input04.txt"))?
         .lines()
         .map(Card::from_str)
         .collect::<Result<Vec<Card>, _>>()?;
     println!("{}", solve(&cards));
+    println!("{}", solve2(&cards));
     Ok(())
 }
