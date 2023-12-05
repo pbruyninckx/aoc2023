@@ -24,13 +24,16 @@ impl Card {
         Ok(Self { winning, mine })
     }
 
-    fn get_points(&self) -> i64 {
+    fn get_num_matches(&self) -> u32 {
         let winning: HashSet<i64> = HashSet::from_iter(self.winning.iter().cloned());
-        let num_matches: u32 = self
-            .mine
+        self.mine
             .iter()
             .map(|number| if winning.contains(number) { 1 } else { 0 })
-            .sum();
+            .sum()
+    }
+
+    fn get_points(&self) -> i64 {
+        let num_matches = self.get_num_matches();
 
         if num_matches == 0 {
             0
