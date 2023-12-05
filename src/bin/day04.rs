@@ -8,19 +8,12 @@ struct Card {
     mine: Vec<i64>,
 }
 
-fn parse_numbers(string: &str) -> Result<Vec<i64>, Error> {
-    Ok(string
-        .trim()
-        .split_ascii_whitespace()
-        .map(|d| d.parse::<i64>())
-        .collect::<Result<Vec<_>, _>>()?)
-}
-
 impl Card {
     fn from_str(string: &str) -> Result<Self, Error> {
         let parts = string.split([':', '|']).collect::<Vec<_>>();
-        let winning = parse_numbers(parts.get(1).ok_or(Error::msg("winning numbers missing"))?)?;
-        let mine = parse_numbers(parts.get(2).ok_or(Error::msg("my numbers missing"))?)?;
+        let winning =
+            aoc2023::parse_numbers(parts.get(1).ok_or(Error::msg("winning numbers missing"))?)?;
+        let mine = aoc2023::parse_numbers(parts.get(2).ok_or(Error::msg("my numbers missing"))?)?;
         Ok(Self { winning, mine })
     }
 
@@ -52,7 +45,9 @@ fn solve2(cards: &[Card]) -> usize {
 
     for (card_index, card) in cards.iter().enumerate().rev().skip(1) {
         let num_matches = card.get_num_matches() as usize;
-        num_cards[card_index] += num_cards[card_index+1..card_index+1+num_matches].iter().sum::<usize>();
+        num_cards[card_index] += num_cards[card_index + 1..card_index + 1 + num_matches]
+            .iter()
+            .sum::<usize>();
     }
 
     num_cards.iter().sum()
