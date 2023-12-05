@@ -22,6 +22,14 @@ impl MapRange {
             None
         }
     }
+
+    fn apply(&self, value: i64) -> Option<i64> {
+        if self.source_start <= value && value - self.source_start < self.length {
+            Some(self.dest_start + (value - self.source_start))
+        } else {
+            None
+        }
+    }
 }
 
 struct Mapping {
@@ -37,6 +45,14 @@ impl Mapping {
         }
 
         Self { ranges }
+    }
+
+    fn apply(&self, number: i64) -> i64 {
+        self.ranges
+            .iter()
+            .filter_map(|range| range.apply(number))
+            .next()
+            .unwrap_or(number)
     }
 }
 struct Almanac {
@@ -62,12 +78,27 @@ impl Almanac {
         Ok(Self { seeds, maps })
     }
 }
+
+fn solve(almanac: &Almanac) -> i64 {
+    almanac
+        .seeds
+        .iter()
+        .map(|seed| {
+            almanac
+                .maps
+                .iter()
+                .fold(*seed, |number, mapping| mapping.apply(number))
+        })
+        .min()
+        .unwrap()
+}
+
 fn main() -> Result<(), Error> {
     let almanac = Almanac::from_lines(
         &fs::read_to_string(Path::new("data/input05.txt"))?
             .lines()
             .collect::<Vec<_>>(),
     )?;
-    println!("{}", almanac.maps.len());
+    println!("{}", solve(&almanac));
     Ok(())
 }
