@@ -48,10 +48,10 @@ fn parse_input(input: &str) -> Map {
     }
 }
 
-fn solve(map: &Map) -> u64 {
+fn solve(map: &Map, start_node: &str, is_end_node: fn(&str) -> bool) -> u64 {
     let cycle_instructions = map.instructions.iter().cycle();
 
-    let mut current_node = String::from("AAA");
+    let mut current_node = String::from(start_node);
     let mut num_steps = 0;
     for instruction in cycle_instructions {
         let current_paths = map.network.get(&*current_node).unwrap();
@@ -61,7 +61,7 @@ fn solve(map: &Map) -> u64 {
         };
         num_steps += 1;
 
-        if current_node == *"ZZZ" {
+        if is_end_node(&current_node) {
             break;
         }
     }
@@ -70,7 +70,7 @@ fn solve(map: &Map) -> u64 {
 
 fn main() -> Result<(), Error> {
     let map = parse_input(&fs::read_to_string(Path::new("data/input08.txt"))?);
-    println!("{}", solve(&map));
+    println!("{}", solve(&map, "AAA", |s| s == "ZZZ"));
 
     Ok(())
 }
