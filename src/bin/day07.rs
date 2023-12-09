@@ -20,18 +20,18 @@ impl Card {
     }
 }
 
-#[derive(PartialOrd, PartialEq)]
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
 enum HandType {
     High = 0,
-    OnePair =1,
-    TwoPair=2,
-    Three=3,
-    FullHouse=4,
-    Four=5,
-    Five=6,
+    OnePair = 1,
+    TwoPair = 2,
+    Three = 3,
+    FullHouse = 4,
+    Four = 5,
+    Five = 6,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 struct Hand {
     cards: [Card; 5],
 }
@@ -72,9 +72,15 @@ impl Hand {
     }
 }
 
-impl PartialOrd for Hand {
+impl PartialOrd<Self> for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        (self.hand_type(), self.cards).partial_cmp(&(other.hand_type(), other.cards))
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.hand_type(), self.cards).cmp(&(other.hand_type(), other.cards))
     }
 }
 
@@ -102,9 +108,9 @@ fn parse_input(input: &str) -> Result<Vec<HandWithBid>, Error> {
     input.lines().map(parse_line).collect()
 }
 
-fn solve(input: Vec<HandWithBid>) -> u64 {
+fn solve(input: Vec<HandWithBid>, cmp_hands: fn(&Hand, &Hand)->Ordering) -> u64 {
     let mut sorted_hands = input.to_vec();
-    sorted_hands.sort_by(|a, b| a.hand.partial_cmp(&b.hand).unwrap() );
+    sorted_hands.sort_by(|a, b| cmp_hands(&a.hand, &b.hand));
 
     sorted_hands
         .iter()
@@ -115,6 +121,6 @@ fn solve(input: Vec<HandWithBid>) -> u64 {
 fn main() -> Result<(), Error> {
     let input = parse_input(&fs::read_to_string(Path::new("data/input07.txt"))?)?;
 
-    println!("{}", solve(input));
+    println!("{}", solve(input, Hand::cmp));
     Ok(())
 }
