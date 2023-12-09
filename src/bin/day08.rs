@@ -1,4 +1,5 @@
 use anyhow::Error;
+use num::integer::lcm;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -68,9 +69,20 @@ fn solve(map: &Map, start_node: &str, is_end_node: fn(&str) -> bool) -> u64 {
     num_steps
 }
 
+fn solve2(map: &Map) -> u64 {
+    let is_end_node = |node: &str| node.ends_with('Z');
+    map.network
+        .keys()
+        .filter(|n| n.ends_with('A'))
+        .map(|start_node| solve(map, start_node, is_end_node))
+        .reduce(lcm)
+        .unwrap()
+}
+
 fn main() -> Result<(), Error> {
     let map = parse_input(&fs::read_to_string(Path::new("data/input08.txt"))?);
     println!("{}", solve(&map, "AAA", |s| s == "ZZZ"));
+    println!("{}", solve2(&map));
 
     Ok(())
 }
