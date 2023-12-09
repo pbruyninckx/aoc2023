@@ -18,6 +18,14 @@ impl Card {
             _ => panic!("invalid card"),
         }) as i8)
     }
+
+    fn joker_value(&self) -> i8 {
+        if self.0 == 11 {
+            1
+        } else {
+            self.0
+        }
+    }
 }
 
 #[derive(Ord, PartialOrd, Eq, PartialEq)]
@@ -37,17 +45,43 @@ struct Hand {
 }
 
 impl Hand {
-    fn hand_type(&self) -> HandType {
-        let sorted_counts = {
-            let mut histogram: HashMap<Card, i8> = HashMap::new();
-            for card in self.cards {
-                histogram.entry(card).and_modify(|e| *e += 1).or_insert(1);
-            }
+    fn get_histogram(&self) -> HashMap<Card, i8> {
+        let mut histogram: HashMap<Card, i8> = HashMap::new();
+        for card in self.cards {
+            histogram.entry(card).and_modify(|e| *e += 1).or_insert(1);
+        }
+        histogram
+    }
 
+    fn get_sorted_card_counts(&self) -> Vec<i8> {
+        let mut counts: Vec<i8> = self.get_histogram().values().cloned().collect();
+        counts.sort_by_key(|c| -*c);
+        counts
+    }
+
+    fn get_joker_sorted_card_counts(&self) -> Vec<i8> {
+        let mut histogram = self.get_histogram();
+        let num_jokers = histogram.remove(&Card::from_char('J')).unwrap_or(0);
+        if num_jokers == 5 {
+            vec![5]
+        } else {
             let mut counts: Vec<i8> = histogram.values().cloned().collect();
             counts.sort_by_key(|c| -*c);
+            counts[0] += num_jokers;
             counts
-        };
+        }
+    }
+
+    fn hand_type(&self) -> HandType {
+        self.hand_type_with_count_fn(Self::get_sorted_card_counts)
+    }
+
+    fn joker_hand_type(&self) -> HandType {
+        self.hand_type_with_count_fn(Self::get_joker_sorted_card_counts)
+    }
+
+    fn hand_type_with_count_fn(&self, count_fn: fn(&Self) -> Vec<i8>) -> HandType {
+        let sorted_counts = count_fn(self);
 
         match sorted_counts.len() {
             1 => HandType::Five,
@@ -69,6 +103,21 @@ impl Hand {
             5 => HandType::High,
             _ => panic!("Logic error"),
         }
+    }
+
+    fn joker_cmp(&self, other: &Self) -> Ordering {
+        (
+            self.joker_hand_type(),
+            self.cards.iter().map(Card::joker_value).collect::<Vec<_>>(),
+        )
+            .cmp(&(
+                other.joker_hand_type(),
+                other
+                    .cards
+                    .iter()
+                    .map(Card::joker_value)
+                    .collect::<Vec<_>>(),
+            ))
     }
 }
 
@@ -108,7 +157,7 @@ fn parse_input(input: &str) -> Result<Vec<HandWithBid>, Error> {
     input.lines().map(parse_line).collect()
 }
 
-fn solve(input: Vec<HandWithBid>, cmp_hands: fn(&Hand, &Hand)->Ordering) -> u64 {
+fn solve(input: &[HandWithBid], cmp_hands: fn(&Hand, &Hand) -> Ordering) -> u64 {
     let mut sorted_hands = input.to_vec();
     sorted_hands.sort_by(|a, b| cmp_hands(&a.hand, &b.hand));
 
@@ -121,6 +170,7 @@ fn solve(input: Vec<HandWithBid>, cmp_hands: fn(&Hand, &Hand)->Ordering) -> u64 
 fn main() -> Result<(), Error> {
     let input = parse_input(&fs::read_to_string(Path::new("data/input07.txt"))?)?;
 
-    println!("{}", solve(input, Hand::cmp));
+    println!("{}", solve(&input, Hand::cmp));
+    println!("{}", solve(&input, Hand::joker_cmp));
     Ok(())
 }
