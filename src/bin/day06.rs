@@ -39,12 +39,28 @@ fn parse_input(input: &str) -> Result<Vec<Race>, Error> {
         .collect())
 }
 
+fn parse_as_big_number(line: &str) -> i64 {
+    line.chars().fold(0_i64, |acc, c| {
+        c.to_digit(10).map_or(acc, |d| acc * 10 + d as i64)
+    })
+}
+fn parse_input_as_single_race(input: &str) -> Result<Race, Error> {
+    let values: Vec<_> = input.lines().map(parse_as_big_number).collect();
+    Ok(Race {
+        time: *values.first().ok_or(Error::msg("no time line"))?,
+        distance: *values.get(1).ok_or(Error::msg("no distance line"))?,
+    })
+}
+
 fn solve(races: &[Race]) -> u64 {
     races.iter().map(Race::num_ways_to_beat).product()
 }
 
 fn main() -> Result<(), Error> {
-    let races = parse_input(&fs::read_to_string(Path::new("data/input06.txt"))?)?;
+    let input = fs::read_to_string(Path::new("data/input06.txt"))?;
+    let races = parse_input(&input)?;
     println!("{}", solve(&races));
+    let mega_race = parse_input_as_single_race(&input)?;
+    println!("{}", mega_race.num_ways_to_beat());
     Ok(())
 }
