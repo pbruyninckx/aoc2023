@@ -61,7 +61,7 @@ fn parse_input(input: &str) -> Input {
 }
 
 fn next_pos(
-    map: &Vec<Vec<char>>,
+    map: &[Vec<char>],
     pos: &(i64, i64),
     last_dir: &(i64, i64),
 ) -> ((i64, i64), (i64, i64)) {
@@ -100,9 +100,56 @@ fn solve(input: &Input) -> i64 {
     counter
 }
 
+fn get_clean_map(input: &Input) -> Vec<Vec<char>> {
+    let mut result = vec![vec!['.'; input.map[0].len()]; input.map.len()];
+    let mut last_dir = (0, 0);
+
+    let mut pos = input.start;
+    loop {
+        result[pos.0 as usize][pos.1 as usize] = input.map[pos.0 as usize][pos.1 as usize];
+        (pos, last_dir) = next_pos(&input.map, &pos, &last_dir);
+
+        if pos == input.start {
+            break;
+        }
+    }
+
+    result
+}
+
+fn solve2(input: &Input) -> i64 {
+    let clean_map = get_clean_map(input);
+    let mut ret = 0;
+    // Count line by line
+    for line in clean_map {
+        let mut inside: bool = false;
+        let mut pipe_start: Option<char> = None;
+        for tile in line {
+            if tile == '.' && pipe_start.is_none() {
+                ret += inside as i64;
+            } else if tile == '|' {
+                inside = !inside;
+            } else if pipe_start.is_none() {
+                pipe_start = Some(tile);
+            } else if tile != '-' {
+                if pipe_start.unwrap() == 'L' && tile == '7'
+                    || pipe_start.unwrap() == 'F' && tile == 'J'
+                {
+                    inside = !inside;
+                }
+                pipe_start = None;
+            }
+            // Cases L-J F-7   <-->   L-7 | F-J
+        }
+    }
+
+    ret
+}
+
 fn main() -> Result<(), Error> {
     let input = parse_input(&fs::read_to_string(Path::new("data/input10.txt"))?);
     println!("{}", solve(&input));
+    println!("{}", solve2(&input));
 
     Ok(())
 }
