@@ -52,30 +52,31 @@ impl Image {
         }
     }
 
-    fn distance(&self, a: &Location, b: &Location) -> i64 {
+    fn distance(&self, a: &Location, b: &Location, empty_dist: i64) -> i64 {
         let min_row = min(a.row, b.row);
         let max_row = max(a.row, b.row);
         let min_col = min(a.col, b.col);
         let max_col = max(a.col, b.col);
         max_row - min_row + max_col - min_col
-            + self
-                .empty_rows
-                .iter()
-                .filter(|r| min_row < **r && **r < max_row)
-                .count() as i64
-            + self
-                .empty_cols
-                .iter()
-                .filter(|r| min_col < **r && **r < max_col)
-                .count() as i64
+            + (empty_dist - 1)
+                * (self
+                    .empty_rows
+                    .iter()
+                    .filter(|r| min_row < **r && **r < max_row)
+                    .count() as i64
+                    + self
+                        .empty_cols
+                        .iter()
+                        .filter(|r| min_col < **r && **r < max_col)
+                        .count() as i64)
     }
 }
 
-fn solve(image: &Image) -> i64 {
+fn solve(image: &Image, empty_dist: i64) -> i64 {
     let mut ret = 0;
     for i in 0..image.galaxies.len() {
         for j in i + 1..image.galaxies.len() {
-            ret += image.distance(&image.galaxies[i], &image.galaxies[j]);
+            ret += image.distance(&image.galaxies[i], &image.galaxies[j], empty_dist);
         }
     }
 
@@ -84,7 +85,9 @@ fn solve(image: &Image) -> i64 {
 
 fn main() -> Result<(), Error> {
     let image = Image::from_str(&fs::read_to_string(Path::new("data/input11.txt"))?);
-    println!("{}", solve(&image));
+    for empty_dist in [2, 1000000] {
+        println!("{}", solve(&image, empty_dist));
+    }
 
     Ok(())
 }
