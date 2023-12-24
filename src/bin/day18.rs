@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use itertools::izip;
 use std::fs;
 use std::ops::AddAssign;
 use std::path::Path;
@@ -43,59 +43,37 @@ fn parse_input(string: &str) -> Vec<Instruction> {
 }
 
 fn solve(instructions: &Vec<Instruction>) -> i64 {
-    let edges = get_edges(instructions);
-
-    let up = edges.iter().map(|p| p.r).min().unwrap();
-    let down = edges.iter().map(|p| p.r).max().unwrap();
-    let left = edges.iter().map(|p| p.c).min().unwrap();
-    let right = edges.iter().map(|p| p.c).max().unwrap();
-
-    let edge_set: HashSet<Pos> = HashSet::from_iter(edges);
-
-    let mut ret = 0;
-    for r in up..down + 1 {
-        let mut active = false;
-        let mut from = ' ';
-        for c in left..right + 1 {
-            if edge_set.contains(&Pos { r, c }) != edge_set.contains(&Pos { r, c: c - 1 }) {
-                if edge_set.contains(&Pos { r, c }) {
-                    from = if edge_set.contains(&Pos { r: r + 1, c })
-                        && edge_set.contains(&Pos { r: r - 1, c })
-                    {
-                        'B'
-                    } else if edge_set.contains(&Pos { r: r + 1, c }) {
-                        'D'
-                    } else {
-                        assert!(edge_set.contains(&Pos { r: r - 1, c }));
-                        'U'
-                    }
-                } else if from == 'B'
-                    || edge_set.contains(&Pos { r: r + 1, c: c - 1 }) == (from == 'U')
-                {
-                    active = !active;
-                }
-            }
-            if edge_set.contains(&Pos { r, c }) || active {
-                ret += 1;
-            }
-        }
+    struct State {
+        height: i64,
+        area: i64,
     }
 
-    ret
-}
-
-fn get_edges(instructions: &Vec<Instruction>) -> Vec<Pos> {
-    let mut edges = vec![Pos { r: 0, c: 0 }];
-    for instruction in instructions {
-        let mut pos = *edges.last().unwrap();
-        for _ in 0..instruction.distance {
-            pos += instruction.direction;
-            edges.push(pos);
-        }
-    }
-    assert_eq!(edges[0], *edges.last().unwrap());
-    edges.pop();
-    edges
+    let extended_it = instructions.iter().cycle().take(instructions.len() + 2);
+    izip!(
+        extended_it.clone(),
+        extended_it.clone().skip(1),
+        extended_it.skip(2)
+    )
+    .filter(|(_, instr, _)| ['L', 'R'].contains(&instr.direction))
+    .fold(
+        State { height: 0, area: 0 },
+        |mut state, (before, instr, after)| {
+            state.height += before.distance * (if before.direction == 'U' { 1 } else { -1 });
+            state.area += match (before.direction, instr.direction, after.direction) {
+                ('U', 'R', 'D') => (instr.distance + 1) * state.height,
+                ('D', 'R', 'D') => instr.distance * state.height,
+                ('U', 'R', 'U') => instr.distance * state.height,
+                ('D', 'R', 'U') => (instr.distance - 1) * state.height,
+                ('U', 'L', 'D') => -(instr.distance - 1) * (state.height - 1),
+                ('U', 'L', 'U') => -instr.distance * (state.height - 1),
+                ('D', 'L', 'D') => -instr.distance * (state.height - 1),
+                ('D', 'L', 'U') => -(instr.distance + 1) * (state.height - 1),
+                (_, _, _) => panic!("Not expecting this"),
+            };
+            state
+        },
+    )
+    .area
 }
 
 fn main() {
