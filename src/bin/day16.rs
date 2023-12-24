@@ -119,8 +119,28 @@ fn solve1(map: &Map) -> usize {
     solve(map, (Pos { r: 0, c: -1 }, Direction { dr: 0, dc: 1 }))
 }
 
+fn solve2(map: &Map) -> usize {
+    (0..map.nr)
+        .flat_map(|r| {
+            [
+                (Pos { r, c: 0 }, Direction { dr: 0, dc: 1 }),
+                (Pos { r, c: map.nr }, Direction { dr: 0, dc: -1 }),
+            ]
+        })
+        .chain((0..map.nc).flat_map(|c| {
+            [
+                (Pos { r: 0, c }, Direction { dr: 1, dc: 0 }),
+                (Pos { r: map.nc, c }, Direction { dr: -1, dc: 0 }),
+            ]
+        }))
+        .map(|start| solve(map, start))
+        .max()
+        .unwrap()
+}
+
 fn main() {
     let map = Map::from_str(&fs::read_to_string(Path::new("data/input16.txt")).unwrap());
 
     println!("{}", solve1(&map));
+    println!("{}", solve2(&map));
 }
