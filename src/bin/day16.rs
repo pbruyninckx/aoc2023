@@ -88,8 +88,8 @@ fn new_directions(dir: &Direction, m: char) -> Vec<Direction> {
     }
 }
 
-fn solve(map: &Map) -> usize {
-    let mut active = vec![(Pos { r: 0, c: -1 }, Direction { dr: 0, dc: 1 })];
+fn solve(map: &Map, start: (Pos, Direction)) -> usize {
+    let mut active = vec![start];
     let mut seen: HashSet<(Pos, Direction)> = HashSet::new();
 
     while let Some((mut current_pos, current_dir)) = active.pop() {
@@ -115,8 +115,12 @@ fn solve(map: &Map) -> usize {
     seen_pos.len()
 }
 
+fn solve1(map: &Map) -> usize {
+    solve(map, (Pos { r: 0, c: -1 }, Direction { dr: 0, dc: 1 }))
+}
+
 fn main() {
     let map = Map::from_str(&fs::read_to_string(Path::new("data/input16.txt")).unwrap());
 
-    println!("{}", solve(&map));
+    println!("{}", solve1(&map));
 }
