@@ -112,7 +112,7 @@ impl PartialOrd for HeatState {
     }
 }
 
-fn solve(map: &Map<i64>) -> i64 {
+fn solve(map: &Map<i64>, skip: usize, take: usize) -> i64 {
     let target_pos = Pos {
         r: map.nr - 1,
         c: map.nc - 1,
@@ -130,24 +130,25 @@ fn solve(map: &Map<i64>) -> i64 {
             continue;
         }
         finished.insert((current.pos, current.last_dir));
+
         let new_dir = current.last_dir.switch();
-        match current.last_dir {
-            Direction::Horizontal => {}
-            Direction::Vertical => {}
-        }
         let mut add_state = current;
         add_state.last_dir = new_dir;
         let mut sub_state = add_state;
-        for _ in 1..4 {
+        for iteration in 0..(skip + take) {
             add_state.pos = add_state.pos + new_dir;
             sub_state.pos = sub_state.pos - new_dir;
             if map.contains(&add_state.pos) {
                 add_state.heat_loss += map[add_state.pos];
-                todo.push(add_state);
+                if iteration >= skip {
+                    todo.push(add_state);
+                }
             }
             if map.contains(&sub_state.pos) {
                 sub_state.heat_loss += map[sub_state.pos];
-                todo.push(sub_state);
+                if iteration >= skip {
+                    todo.push(sub_state);
+                }
             }
         }
     }
@@ -158,5 +159,6 @@ fn solve(map: &Map<i64>) -> i64 {
 fn main() {
     let map = Map::from_str(&fs::read_to_string(Path::new("data/input17.txt")).unwrap());
 
-    println!("{}", solve(&map));
+    println!("{}", solve(&map, 0, 3));
+    println!("{}", solve(&map, 3, 7));
 }
